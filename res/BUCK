@@ -1,0 +1,8 @@
+android_resource(
+  name = 'res',
+  res = 'snappy',
+  package = 'com.whitedrop.snappy',
+  visibility = [
+    'PUBLIC'
+  ]
+)

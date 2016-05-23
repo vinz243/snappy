@@ -1,0 +1,11 @@
+android_binary(
+  name = 'main',
+  manifest = 'AndroidManifest.xml',
+  keystore = '//keystores:debug',
+  package_type = 'debug',
+  deps = [
+    '//java:main',
+    '//res:res',
+    '//keystores:debug',
+  ],
+)

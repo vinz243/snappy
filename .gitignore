@@ -6,3 +6,5 @@
 /buck-cache
 /buck-out
 /.buckd
+/keystores/main.keystore
+/keystores/main.keystore.properties
