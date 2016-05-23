@@ -3,6 +3,8 @@ android_resource(
   res = 'snappy',
   package = 'com.whitedrop.snappy',
   visibility = [
-    'PUBLIC'
+    'PUBLIC',
+    '//libs:appcompat-v7',
+    '//libs:design'
   ]
 )

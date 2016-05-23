@@ -1,0 +1,45 @@
+import urllib
+
+#
+# This is a very quick-n-dirty bucklet for maven packages (jar and aar)
+#
+
+def mavensha1(group, name, version, ar):
+	try:
+		link = 'http://repo1.maven.org/maven2/{0}/{1}/{2}/{1}-{2}.{3}.sha1'.format(group.replace('.', '/'), name, version, ar)
+		f = urllib.urlopen(link)
+		cksum = f.read()
+		int(cksum, 16) # will throw an error if cksum is not a hexadecimal string
+		return cksum
+	except ValueError:
+		return None
+
+def maven(pkg):
+	group, name, version = pkg.split(':', 3)
+	for ar in ['aar', 'jar']:
+		cksum = mavensha1(group, name, version, ar)
+		if cksum != None:
+			if ar == 'aar':
+				android_prebuilt_aar(
+					name = name,
+					aar = ':'+name+'-maven',
+				)
+				remote_file(
+					name = name + '-maven',
+					sha1 = cksum,
+					url = 'mvn:' + group + ':' + name + ':' + ar + ':' + version,
+					out = name + '.' + ar,
+				)
+			else:
+				prebuilt_jar(
+					name = name,
+					binary_jar = ':' + name + '-maven',
+				)
+				remote_file(
+					name = name,
+					sha1 = cksum,
+					url = 'mvn:' + group + ':' + name + ':' + ar + ':' + version,
+					out = name + '.' + ar,
+				)
+			return
+	print('Not found ' + pkg)

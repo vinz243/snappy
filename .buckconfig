@@ -10,3 +10,6 @@
     default_android_manifest = //res/AndroidManifest.xml
 [android]
     target = Google Inc.:Google APIs:21
+
+[buildfile]
+  includes = //DEFS

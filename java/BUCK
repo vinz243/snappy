@@ -1,8 +1,12 @@
+
+
 android_library(
   name = 'main',
   srcs = glob(['./**/*.java']),
   visibility = [ 'PUBLIC' ],
   deps = [
-   '//res:res'
+   '//res:res',
+   '//libs:appcompat-v7',
+   '//libs:design'
   ]
 )

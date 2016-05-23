@@ -1,3 +1,6 @@
+
+
+
 android_binary(
   name = 'main',
   manifest = 'AndroidManifest.xml',
