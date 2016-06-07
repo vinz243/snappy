@@ -1,11 +1,15 @@
 
-android_prebuilt_aar(
-  name = 'appcompat-v7',
-  aar = 'appcompat-v7-23.4.0.aar',
-  visibility = ['PUBLIC']
-)
-android_prebuilt_aar(
-  name = 'design',
-  aar = 'design-23.4.0.aar',
-  visibility = ['PUBLIC']
-)
+
+local_maven('com.android.support:design:23.4.0')
+local_maven('com.android.support:appcompat-v7:23.4.0')
+
+# android_prebuilt_aar(
+#   name = 'appcompat-v7',
+#   aar = 'appcompat-v7-23.0.1.aar',
+#   visibility = ['PUBLIC']
+# )
+# android_prebuilt_aar(
+#   name = 'design',
+#   aar = 'design-23.0.1.aar',
+#   visibility = ['PUBLIC']
+# )

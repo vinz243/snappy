@@ -2,9 +2,11 @@ android_resource(
   name = 'res',
   res = 'snappy',
   package = 'com.whitedrop.snappy',
+  deps = [
+  '//libs:appcompat-v7',
+  '//libs:design'
+  ],
   visibility = [
     'PUBLIC',
-    '//libs:appcompat-v7',
-    '//libs:design'
   ]
 )
