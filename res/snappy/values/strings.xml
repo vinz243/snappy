@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">HelloWorldDemo</string>
+    <string name="app_name">Snappy</string>
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
     <string name="action_settings">Settings</string>

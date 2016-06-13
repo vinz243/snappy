@@ -4,9 +4,17 @@ android_resource(
   package = 'com.whitedrop.snappy',
   deps = [
   '//libs:appcompat-v7',
-  '//libs:design'
+  '//libs:design',
+  '//libs:support-v4',
+  '//libs:support-vector-drawable',
+  '//libs:animated-vector-drawable',
+  '//libs:recyclerview-v7'
   ],
   visibility = [
     'PUBLIC',
   ]
+)
+project_config(
+  src_target = '//res:res',
+  src_roots = [ 'snappy' ]
 )

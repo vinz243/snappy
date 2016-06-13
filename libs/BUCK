@@ -2,6 +2,10 @@
 
 local_maven('com.android.support:design:23.4.0')
 local_maven('com.android.support:appcompat-v7:23.4.0')
+local_maven('com.android.support:support-v4:23.4.0')
+local_maven('com.android.support:support-vector-drawable:23.4.0')
+local_maven('com.android.support:animated-vector-drawable:23.4.0')
+local_maven('com.android.support:recyclerview-v7:23.4.0')
 
 # android_prebuilt_aar(
 #   name = 'appcompat-v7',

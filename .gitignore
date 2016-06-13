@@ -9,3 +9,4 @@
 /.buckd
 /keystores/main.keystore
 /keystores/main.keystore.properties
+/.idea

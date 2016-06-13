@@ -1,12 +1,16 @@
-
+project_config(
+  src_target = '//java:main',
+  src_roots = [ '.' ]
+)
 
 android_library(
   name = 'main',
   srcs = glob(['./**/*.java']),
   visibility = [ 'PUBLIC' ],
   deps = [
-   '//res:res',
-   '//libs:appcompat-v7',
-   '//libs:design'
+  '//libs:appcompat-v7',
+  '//libs:support-v4',
+  '//libs:design',
+   '//res:res'
   ]
 )
