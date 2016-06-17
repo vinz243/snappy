@@ -2,14 +2,15 @@ android_resource(
   name = 'res',
   res = 'snappy',
   package = 'com.whitedrop.snappy',
-  deps = [
-  '//libs:appcompat-v7',
-  '//libs:design',
-  '//libs:support-v4',
-  '//libs:support-vector-drawable',
-  '//libs:animated-vector-drawable',
-  '//libs:recyclerview-v7'
-  ],
+  deps = build_deps([
+    '//libs:appcompat-v7',
+    '//libs:design',
+    '//libs:support-v4',
+    '//libs:support-vector-drawable',
+    '//libs:animated-vector-drawable',
+    '//libs:recyclerview-v7',
+    '//mvn:drawee',
+  ]),
   visibility = [
     'PUBLIC',
   ]

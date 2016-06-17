@@ -4,6 +4,6 @@ android_binary(
   keystore = '//keystores:debug',
   package_type = 'debug',
   deps = [
-    '//java:main',
+    '//java:main'
   ],
 )

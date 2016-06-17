@@ -3,4 +3,9 @@
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
     <string name="action_settings">Settings</string>
+    <string name="storage_perm_rationale">Storage access needed to see pictures</string>
+    <string name="allow_storage">Allow</string>
+    <string name="storage_perm_allowed">Storage access allowed</string>
+    <string name="storage_perm_denied">Storage permission denied</string>
+
 </resources>

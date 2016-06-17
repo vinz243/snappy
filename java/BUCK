@@ -2,15 +2,21 @@ project_config(
   src_target = '//java:main',
   src_roots = [ '.' ]
 )
-
+deps = build_deps([
+ '//libs:appcompat-v7',
+ '//libs:support-v4',
+ '//libs:support-v13',
+ '//libs:design',
+ '//res:res',
+ '//libs:recyclerview-v7',
+ '//libs:greedo-layout',
+ '//mvn:fresco'
+])
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint(deps)
 android_library(
   name = 'main',
   srcs = glob(['./**/*.java']),
   visibility = [ 'PUBLIC' ],
-  deps = [
-  '//libs:appcompat-v7',
-  '//libs:support-v4',
-  '//libs:design',
-   '//res:res'
-  ]
+  deps = deps
 )
