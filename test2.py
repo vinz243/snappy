@@ -16,18 +16,10 @@ import pprint
 import dpath.util
 import hashlib
 
-def mavensha1(group, name, version, ar, index=0):
-    if index == len(repos):
-        return None
-    try:
-        link = repos[index] + '{0}/{1}/{2}/{1}-{2}.{3}.sha1'.format(group.replace('.', '/'), name, version, ar)
-        f = urllib.urlopen(link)
-        cksum = f.read()
-        int(cksum, 16) # will throw an error if cksum is not a hexadecimal string
-        cached_repos[cksum] = repos[index]
-        return cksum
-    except ValueError:
-        return mavensha1(group, name, version, ar, index + 1)
+
+# helper to make url
+def make_url(repo, group, name, version, ar):
+    return repo + '{0}/{1}/{2}/{1}-{2}.{3}'.format(group.replace('.', '/'), name, version, ar)
 
 # helper for mkdir -p
 def mkdir_p(path):
@@ -100,34 +92,39 @@ def mavensha1(group, name, version, ar, index=0):
     except ValueError:
         return mavensha1(group, name, version, ar, index + 1)
 
+
+def remote_file(**kwargs):
+    print 'remote_file ' + kwargs.get('name', 'whattt?')
+
 def dmaven(pkg):
     group, name, version = pkg.split(':', 3)
     for ar in ['aar', 'jar']:
-        cksum = mavensha1(group, name, version, ar)
+        cksum, repo = mavensha1(group, name, version, ar)
         if cksum != None:
-            repo = cached_repos[cksum]
             remote_file(
-                name = name + '-maven',
+                name = normalize_id(pkg) + '-maven',
                 sha1 = cksum,
                 url = make_url(repo, group, name, version, ar),
-                out = name + '.' + ar,
+                out =  normalize_id(pkg) + '.' + ar,
             )
-            if ar == 'aar':
-                android_prebuilt_aar(
-                    name = name,
-                    aar = ':'+name+'-maven',
-                    visibility = ['PUBLIC']
-                )
-            else:
-                prebuilt_jar(
-                    name = name,
-                    binary_jar = ':' + name + '-maven',
-                    visibility = ['PUBLIC']
-                )
+            # if ar == 'aar':
+            #     android_prebuilt_aar(
+            #         name = normalize_id(pkg),
+            #         aar = ':'+normalize_id(pkg)+'-maven',
+            #         visibility = ['PUBLIC']
+            #     )
+            # else:
+            #     prebuilt_jar(
+            #         name = normalize_id(pkg),
+            #         binary_jar = ':' + normalize_id(pkg) + '-maven',
+            #         visibility = ['PUBLIC']
+            #     )
 
             return
     print('Not found ' + pkg)
 
+def normalize_id(id):
+    return id.replace('.', '_').replace(':', '__')
 
 class MavenPackage(object):
     """docstring for MavenPackage"""
@@ -142,6 +139,7 @@ class MavenPackage(object):
             if package.id == pkg:
                 return package
         return None
+
 
     def __init__(self, pkg, name='', version='', type='primary'):
         if name == '' and version == '':
@@ -158,6 +156,8 @@ class MavenPackage(object):
         self.repository = None
         self.type = type
         self.id = self.group + ':' + self.name
+        self.normalized_id =  normalize_id(self.id)
+        self.package = self.group + ':' + self.name + ':' + self.version
         # walk tree and look for package with same name
         package = self.find_matching_package(self.id)
         if package:
@@ -212,6 +212,20 @@ class MavenPackage(object):
         for dep in self.dependencies:
             self.find_matching_package(dep).display_tree(indent + '  ')
 
+    def get_flat_dependencies(self):
+        dep_list = []
+        self.get_flat_dependencies2(dep_list)
+        return list(set(dep_list))
+
+    def get_flat_dependencies2(self, dep_list):
+        dep_list.append(self.normalized_id)
+        for dep in self.dependencies:
+            self.find_matching_package(dep).get_flat_dependencies2(dep_list)
+        return
+
+    def register_package(self):
+        dmaven(self.package)
+
     def get_url(self, ar):
         return ((self.repository or 'local:')
                     + '{0}/{1}/{2}/{1}-{2}.{3}'.format(
@@ -219,9 +233,35 @@ class MavenPackage(object):
                         self.name,
                         self.version, ar))
 
+def find_matching_package_by_name(name):
+    for package in MavenPackage.packages:
+        if package.name == name:
+            return package
+    return None
+
+def register_packages_and_dependencies():
+    for pkg in MavenPackage.packages:
+        pkg.register_package()
+
+def add_libs(input):
+    return '//libs:' + input
+
+def get_deps(deps):
+    result = []
+    for dep in deps:
+        if dep.startswith('//mvn:'):
+            result.extend(map(add_libs, find_matching_package_by_name(dep[6:])
+                                            .get_flat_dependencies()))
+        else:
+            result.append(dep)
+    return result
 
 
+maven_repository('https://github.com/500px/greedo-layout-for-android/raw/master/releases/')
 
-MavenPackage('com.facebook.fresco:fresco:0.11.0').display_tree()
-MavenPackage('com.fivehundredpx:greedo-layout:1.0.0').display_tree()
-MavenPackage('org.springframework:spring-core:4.0.0.RELEASE').display_tree()
+fresco = MavenPackage('com.facebook.fresco:fresco:0.11.0')
+# fresco.display_tree()
+# MavenPackage('com.fivehundredpx:greedo-layout:1.0.0').display_tree()
+# MavenPackage('org.springframework:spring-core:4.0.0.RELEASE').display_tree()
+register_packages_and_dependencies()
+print get_deps(['//mvn:fresco', '//res:res'])
