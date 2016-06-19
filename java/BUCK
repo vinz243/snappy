@@ -1,8 +1,9 @@
+add_build_file_dep('//libs')
 project_config(
   src_target = '//java:main',
   src_roots = [ '.' ]
 )
-deps = build_deps([
+deps = get_deps([
  '//libs:appcompat-v7',
  '//libs:support-v4',
  '//libs:support-v13',
@@ -10,7 +11,7 @@ deps = build_deps([
  '//res:res',
  '//libs:recyclerview-v7',
  '//libs:greedo-layout',
- '//mvn:fresco'
+ '//mvn:com.facebook.fresco:fresco:0.11.0'
 ])
 pp = pprint.PrettyPrinter(indent=4)
 pp.pprint(deps)

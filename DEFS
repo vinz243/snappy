@@ -17,11 +17,9 @@ import dpath.util
 import hashlib
 
 
-cached_repos = {}
-repos = ['http://repo1.maven.org/maven2/']
-
-def maven_repository(uri):
-    repos.append(uri)
+# helper to make url
+def make_url(repo, group, name, version, ar):
+    return repo + '{0}/{1}/{2}/{1}-{2}.{3}'.format(group.replace('.', '/'), name, version, ar)
 
 # helper for mkdir -p
 def mkdir_p(path):
@@ -33,8 +31,18 @@ def mkdir_p(path):
         else:
             raise
 
-# read a remote file and caches the content
+
+
+cached_repos = {}
+repos = ['http://repo1.maven.org/maven2/']
+
+def maven_repository(uri):
+    repos.append(uri)
+
+
 def read_remote_file(url, invalidate_cache=False):
+    if url.startswith('local:'):
+        return ''
     dir = os.getcwd() + '/buck-out/gen/maven/'
 
     if not os.path.isdir(os.getcwd() + '/buck-out/'):
@@ -68,209 +76,201 @@ def read_remote_file(url, invalidate_cache=False):
     lf.write(content)
     return content
 
-# retrives sha1 for dep
 def mavensha1(group, name, version, ar, index=0):
+    global repos
     if index == len(repos):
-        return None
+        return None, None
     try:
         link = repos[index] + '{0}/{1}/{2}/{1}-{2}.{3}.sha1'.format(group.replace('.', '/'), name, version, ar)
 
         cksum = read_remote_file(link)
         int(cksum, 16) # will throw an error if cksum is not a hexadecimal string
         cached_repos[cksum] = repos[index] # we know it exists in this repo
-        return cksum
+        return (cksum, repos[index])
     except ValueError:
         return mavensha1(group, name, version, ar, index + 1)
 
-# old maven, used when building up
+
+def remote_file(**kwargs):
+    print 'remote_file ' + kwargs.get('name', 'whattt?')
+
 def dmaven(pkg):
     group, name, version = pkg.split(':', 3)
     for ar in ['aar', 'jar']:
-        cksum = mavensha1(group, name, version, ar)
+        cksum, repo = mavensha1(group, name, version, ar)
         if cksum != None:
-            repo = cached_repos[cksum]
             remote_file(
-                name = name + '-maven',
+                name = normalize_id(pkg) + '-maven',
                 sha1 = cksum,
                 url = make_url(repo, group, name, version, ar),
-                out = name + '.' + ar,
+                out =  normalize_id(pkg) + '.' + ar,
             )
-            if ar == 'aar':
-                android_prebuilt_aar(
-                    name = name,
-                    aar = ':'+name+'-maven',
-                    visibility = ['PUBLIC']
-                )
-            else:
-                prebuilt_jar(
-                    name = name,
-                    binary_jar = ':' + name + '-maven',
-                    visibility = ['PUBLIC']
-                )
+            # if ar == 'aar':
+            #     android_prebuilt_aar(
+            #         name = normalize_id(pkg),
+            #         aar = ':'+normalize_id(pkg)+'-maven',
+            #         visibility = ['PUBLIC']
+            #     )
+            # else:
+            #     prebuilt_jar(
+            #         name = normalize_id(pkg),
+            #         binary_jar = ':' + normalize_id(pkg) + '-maven',
+            #         visibility = ['PUBLIC']
+            #     )
 
             return
     print('Not found ' + pkg)
 
-# helper to make url
-def make_url(repo, group, name, version, ar):
-    return repo + '{0}/{1}/{2}/{1}-{2}.{3}'.format(group.replace('.', '/'), name, version, ar)
+def normalize_id(id):
+    return id.replace('.', '_').replace(':', '__')
 
-maven_packages = {}
-# pkg = {
-#     group =
-#     name =
-#     version =
-#     level = secondary or primary
-#     dependencies = [
-#         pkg
-#     ]
-# }
+class MavenPackage(object):
+    """docstring for MavenPackage"""
+    packages = []
 
-# this parses depdencies from POM files and add them to the stacj
-def parse_deps(repo, pkg, level='primary'):
-
-    group, name, version = pkg.split(':', 3)
-    if name in maven_packages:
-        # if maven_packages[name].level == 'primary':
-        return
-
-    pomUrl = make_url(repo, group, name, version, 'pom')
-
-    pom = read_remote_file(pomUrl)
-    if pom == '':
-        maven_packages[name] = {
-            'type': 'local_package',
-            'group': group,
-            'name': name,
-            'version': version,
-            'level': level,
-        }
-        return
-    project = objectify.fromstring(pom)
-
-    deps = []
-
-    try:
-        for dep in project.dependencies.dependency:
-            if dep.scope == 'compile':
-                depPkg = dep.groupId + ':' + dep.artifactId + ':' + str(dep.version)
-                parse_deps(repo, depPkg, 'secondary')
-
-                deps.append(dep.artifactId)
+    def find_matching_package(self, group, name=''):
+        if name != '':
+            pkg = group + ':' + name
+        else:
+            pkg = group
+        for package in MavenPackage.packages:
+            if package.id == pkg:
+                return package
+        return None
 
 
-    except AttributeError:
-        pass
-
-    maven_packages[name] = {
-        'type': 'remote_maven',
-        'group': group,
-        'name': name,
-        'version': version,
-        'repo': repo,
-        'dependencies': deps,
-        'level': level
-    }
-# This function declare deps using maven, thus remote_library and android_prebuilt_aar
-def declare_deps():
-    for key, value in maven_packages.iteritems():
-        if value.type == 'remote_maven':
-            maven(pkg)
-        elif value.type == 'local_maven':
-            local_maven(pkg)
-
-cached_tree = None
-
-# This function produces a depdency tree where each key represents a package
-# and as a value a dictionnary containing a new dep tree
-def build_dependency_tree(tree={}, package='', path='', only_primary=False):
-    global cached_tree
-    if package != '':
-        value = maven_packages[package]
-        if value['level'] != 'primary' and only_primary: return
-        new_path = path + '/' + package
-        dpath.util.new(tree, new_path, {})
-        if 'dependencies' in value:
-            for dep in value['dependencies']:
-                build_dependency_tree(tree, dep, new_path)
-        # elif value.level == 'secondary':
-
-        # else:
-            # print 'Unexpected level {0} for {1}'.format(value.level, value.name)
-
-        return
-
-    for key, value in maven_packages.iteritems():
-        build_dependency_tree(tree, key, '', True)
-
-    cached_tree = tree
-
-cached_list_deps = []
-
-# list all available packages and deps to one single list
-def build_dependency_list(list_deps, tree, cache=True, prefix=''):
-    global cached_list_deps
-    if not tree:
-        return
-    if cache:
-        cached_list_deps = list_deps
-
-    pp = pprint.PrettyPrinter(indent=4)
-    for key, value in tree.iteritems():
-        pp.pprint(key)
-        if key not in list_deps:
-            list_deps.append(prefix+key)
-        build_dependency_list(list_deps, value, cache, prefix)
-    return
-
-# register all maven packages to dmaven
-def register_dependencies(list_deps):
-    for name in list_deps:
-        pkg = maven_packages[name]
-        dmaven('{0}:{1}:{2}'.format(pkg['group'], pkg['name'], pkg['version']))
+    def __init__(self, pkg, name='', version='', type='primary'):
+        if name == '' and version == '':
+            group, name, version = pkg.split(':', 3)
+            self.group = group
+        else:
+            self.group = pkg
 
 
-# new public maven routin for declaring maven package
-def maven(pkg):
-    group, name, version = pkg.split(':', 3)
-    for ar in ['aar', 'jar']:
-        cksum = mavensha1(group, name, version, ar)
-        if cksum != None:
-            repo = cached_repos[cksum]
-            parse_deps(repo, pkg)
+
+        self.name = name
+        self.version = version
+        self.dependencies = []
+        self.repository = None
+        self.type = type
+        self.id = self.group + ':' + self.name
+        self.normalized_id =  normalize_id(self.id)
+        self.package = self.group + ':' + self.name + ':' + self.version
+        # walk tree and look for package with same name
+        package = self.find_matching_package(self.id)
+        if package:
+            if package.version != version:
+                print 'Duplicate package {0} with different version {1} and {2},'.format(name, version, package.version)
+                print '\tdropping {0}#{1}'.format(name, package.version)
+                return
             return
-# returns proper dependency list from a list that includes depndencies
-# when using //mvn
-def build_deps(deps):
-    global cached_tree
 
-    new_deps = []
+        self.find_repository()
+        self.build_dependencies()
 
-    if not cached_tree:
-        tree = {}
-        build_dependency_tree(tree)
+        MavenPackage.packages.append(self)
 
+    def find_repository(self):
+        for ar in ['aar', 'jar']:
+            cksum, repo = mavensha1(self.group, self.name, self.version, ar)
+            if cksum != None:
+                self.repository = repo
+                self.checksum = cksum
+                self.file_type = ar
+
+                return
+
+    def build_dependencies(self):
+        if self.repository == 'local:':
+            return
+
+        pom_url = self.get_url('pom')
+
+        pom = read_remote_file(pom_url)
+
+        # If not found, then local dep
+        if pom == '':
+            self.repository = 'local:'
+            return
+
+        project = objectify.fromstring(pom)
+
+        try:
+            for dep in project.dependencies.dependency:
+                if dep.scope == 'compile':
+                    self.dependencies.append(dep.groupId + ':' + dep.artifactId)
+                    depPkg = dep.groupId + ':' + dep.artifactId + ':' + str(dep.version)
+                    pkg = MavenPackage(depPkg, '', '', 'secondary')
+        except AttributeError:
+            pass
+
+    def display_tree(self, indent=''):
+
+        print indent + self.id
+        for dep in self.dependencies:
+            self.find_matching_package(dep).display_tree(indent + '  ')
+
+    def get_flat_dependencies(self):
+        dep_list = []
+        self.get_flat_dependencies2(dep_list)
+        return list(set(dep_list))
+
+    def get_flat_dependencies2(self, dep_list):
+        dep_list.append(self.normalized_id)
+        for dep in self.dependencies:
+            self.find_matching_package(dep).get_flat_dependencies2(dep_list)
+        return
+
+    def register_package(self):
+        dmaven(self.package)
+
+    def get_url(self, ar):
+        return ((self.repository or 'local:')
+                    + '{0}/{1}/{2}/{1}-{2}.{3}'.format(
+                        self.group.replace('.', '/'),
+                        self.name,
+                        self.version, ar))
+
+def find_matching_package_by_name(name):
+    for package in MavenPackage.packages:
+        if package.name == name:
+            return package
+    return None
+
+def find_matching_package_by_id(id):
+    for package in MavenPackage.packages:
+        if package.id == id:
+            return package
+    return None
+def register_packages_and_dependencies():
+    for pkg in MavenPackage.packages:
+        pkg.register_package()
+
+def add_libs(input):
+    return '//libs:' + input
+
+def get_deps(deps):
+    result = []
     for dep in deps:
-        name = dep.split(':', 1)[-1]
-        print name
-        if dep.startswith('//libs:'):
-            new_deps.append(dep)
-        elif dep.startswith('//mvn:'):
-            print 'mvn:'+name
-            build_dependency_list(new_deps, cached_tree.get(name), False, '//libs:')
-        else: new_deps.append(dep)
-    print 'return'
-    return list(set(new_deps))
+        if dep.startswith('//mvn:'):
+            pkg = find_matching_package_by_id(dep[6:])
+            if not pkg:
+                pkg = MavenPackage(dep[6:])
+            print pkg.repository
+            if not pkg.repository == 'local:':
+                result.extend(map(add_libs, pkg.get_flat_dependencies()))
+        else:
+            result.append(dep)
+    return result
 
 
+maven_repository('https://github.com/500px/greedo-layout-for-android/raw/master/releases/')
+
+def maven(pkg):
+    MavenPackage(pkg)
 
 def build_up():
-    tree = {}
-    list_deps = []
-    build_dependency_tree(tree)
-    build_dependency_list(list_deps, tree)
-    register_dependencies(list_deps)
-
+    register_packages_and_dependencies()
 
 sdkPath = '/home/vinz243/android-sdk'
 def local_maven(pkg):
