@@ -1,0 +1,49 @@
+import pickle
+import urllib
+from shutil import copyfile
+from lxml import etree
+from lxml import objectify
+from io import BytesIO
+import os.path
+import errno
+import os
+import pprint
+import dpath.util
+import hashlib
+from mvn_utils import read_remote_file
+from mvn_utils import sha1
+from maven_package import MavenPackage
+
+def add_package(pkg, repo, no_cache):
+    print 'Adding {0} from {1} with{2} cache...'.format(pkg, repo,
+        'out' if no_cache else '')
+    package = MavenPackage(pkg = pkg, repository = repo)
+    package.display_tree()
+
+
+
+
+
+help = """Simple utility to add new maven repos and cache them to cache
+
+Usage:
+    mvn add <package> [--repo=<repository>] [--no-cache]
+    mvn -h | --help
+    mvn cache (clean|rebuild|build)
+
+Options:
+    --repo=repository   Set the repository URL, default to maven repo
+    --no-cache          Do not use cache
+    --help -h           Show this screen
+"""
+
+from docopt import docopt
+
+arguments = docopt(help)
+
+
+
+if arguments.get('add', False):
+    add_package(arguments.get('<package>'),
+        arguments.get('repository','http://repo1.maven.org/maven2/'),
+        arguments.get('--no-cache', False))
