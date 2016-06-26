@@ -1,23 +1,42 @@
+import sys
+import os
+sys.path.insert(0, os.getcwd() + '/')
 
 from mvn_utils import read_remote_file
 from mvn_utils import sha1
 from maven_package import MavenPackage, PackageID, package_manager
 
-# class PackageRegistrar(object):
+def maven_package(**kwargs):
+    package = MavenPackage(
+        package = kwargs.get('package'),
+        repository = kwargs.get('repository'),
+        type = kwargs.get('type')
+    )
+    nid = package.identifier.normalized_id
+    remote_file(
+        name =  nid + '-remote',
+        out = '{0}__{1}.{2}'.format(nid, package.identifier.shid, package.extension),
+        sha1 = package.mavensha1(),
+        url = package.get_url(package.extension)
+    )
+    if package.extension == 'aar':
+        prebuilt_jar(
+            name = kwargs.get('name'),
+            binary_jar = ':' + nid + '-remote',
+            deps = kwargs.get('deps'),
+            visibility = ['PUBLIC']
+        )
+    else:
+        android_prebuilt_aar(
+            name = kwargs.get('name'),
+            aar = ':' + nid + '-remote',
+            deps = kwargs.get('deps'),
+            visibility = ['PUBLIC']
+        )
 
 
-def maven(pkg, repo='http://repo1.maven.org/maven2/'):
-    package = MavenPackage(package = pkg, repository = repo)
-    package.display_tree()
-    print package.get_flat_dependencies()
 
-maven('com.facebook.fresco:fresco:0.11.0')
 
-package_manager.register_to_buck()
-# print get_deps('com_facebook_fresco__fresco')
-
-def build_up():
-    register_packages_and_dependencies()
 
 sdkPath = '/home/vinz243/android-sdk'
 def local_maven(pkg):

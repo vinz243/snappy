@@ -113,6 +113,7 @@ class MavenPackage(object):
         self.type = kwargs.get('type', 'primary')
         self.build_dependencies()
         package_manager.register_package(self)
+        self.mavensha1()
     def get_url(self, ar):
         return ((self.repository or 'local:')
                     + '{0}/{1}/{2}/{1}-{2}.{3}'.format(
@@ -149,11 +150,11 @@ class MavenPackage(object):
         except AttributeError:
             pass
 
-    def display_tree(self, indent='', suffix=''):
+    def display_tree(self, indent=''):
 
-        print indent + self.identifier.id +' ('+self.identifier.universal_shid + ') @ '+str(self.level) + suffix
+        print indent + self.identifier.id +' ('+self.identifier.universal_shid + ') @ '+str(self.level)
         for dep in self.dependencies:
-            package_manager.find_matching_package(identifier = dep).display_tree(indent + '  ', suffix)
+            package_manager.find_matching_package(identifier = dep).display_tree(indent + '  ')
 
     def get_flat_dependencies(self, mode=0):
         dep_list = []
@@ -168,6 +169,28 @@ class MavenPackage(object):
         for dep in self.dependencies:
             package_manager.find_matching_package(identifier = dep).get_flat_dependencies2(dep_list, mode)
         return
+
+    def mavensha1(self, ext=None):
+        if ext == None and not hasattr(self, 'extension'):
+            jar = self.mavensha1('jar.sha1')
+            if not jar:
+                aar = self.mavensha1('aar.sha1')
+                if not aar:
+                    print 'WHAAT ' + self.identifier.id
+                    return
+                else:
+                    self.extension = 'aar'
+                    return aar
+            else:
+                self.extension = jar
+                return 'jar'
+        try:
+            link = self.get_url(ext)
+            cksum = read_remote_file(link)
+            int(cksum, 16) # will throw an error if cksum is not a hexadecimal string
+            return cksum
+        except ValueError:
+            return
 
 
     def get_url(self, ar):

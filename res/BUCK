@@ -3,15 +3,15 @@ android_resource(
   name = 'res',
   res = 'snappy',
   package = 'com.whitedrop.snappy',
-  deps = get_deps([
+  deps = [
     '//libs:appcompat-v7',
     '//libs:design',
     '//libs:support-v4',
     '//libs:support-vector-drawable',
     '//libs:animated-vector-drawable',
     '//libs:recyclerview-v7',
-    '//mvn:com.facebook.fresco:drawee:0.11.0',
-  ]),
+    '//maven:com_facebook_fresco__drawee',
+  ],
   visibility = [
     'PUBLIC',
   ]
