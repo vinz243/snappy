@@ -15,6 +15,7 @@ def mkdir_p(path):
             raise
 
 
+
 def sha1(str):
     sha1 = hashlib.sha1()
     sha1.update(str)

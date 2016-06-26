@@ -2,66 +2,127 @@ from mvn_utils import read_remote_file
 from mvn_utils import sha1
 from mvn_utils import normalize_id
 from lxml import objectify
+import re
+import pprint
+import traceback
+
+class MavenPackageManager(object):
+    def __init__(self, **kwargs):
+        self.packages = []
+
+    def register_package(self, pkg):
+        old = self.find_matching_package(identifier = pkg.identifier.universal_id)
+        if old:
+            if old.level < pkg.level:
+                old.level = pkg.level
+        else:
+            self.packages.append(pkg)
+
+    def find_matching_package(self, **kwargs):
+        hlp = None
+        for pkg in self.packages:
+            if self.compare(pkg, kwargs):
+                if not hlp or pkg.level > hlp.level:
+                    hlp = pkg
+        return hlp
+
+    def compare(self, package, kwargs):
+        for key, value in kwargs.iteritems():
+            obj = getattr(package, key)
+            if type(obj) is PackageID:
+                return obj.equals(value)
+            if obj != value:
+                return False
+        return True
+
+
+package_manager = MavenPackageManager()
+
+class PackageID(object):
+    def __init__(self, **kwargs):
+        self.group = kwargs.get('group')
+        self.name = kwargs.get('name')
+        self.version = kwargs.get('version')
+
+        # Simple id group:name:version
+        self.id = '{0}:{1}:{2}'.format(self.group, self.name, self.version)
+        # Hash based id for pkg
+        self.hid = sha1(self.id)
+        # Shoter version of hash
+        self.shid = self.hid[0:5]
+
+        # ID valid across version, group:name
+        self.universal_id = '{0}:{1}'.format(self.group, self.name)
+        # Hash based id from universal_id
+        self.universal_hid = sha1(self.universal_id)
+        # Shorter hash id
+        self.universal_shid = self.universal_hid[0:5]
+
+        self.normalized_id = self.universal_id.replace('.', '_').replace(':', '__')
+    def get_data_holder(self):
+        return  {
+            'identifier': self.id,
+            'universal_id': self.universal_shid
+        }
+
+    def equals(self, other):
+
+        pattern = re.compile('([a-z]+_)+_(([a-z]|-)+)')
+
+
+
+
+        if isinstance(other, basestring):
+            if self.universal_id == other:
+                return True
+            if pattern.match(other) and self.normalized_id == other:
+                return True
+        if (isinstance(other, self.__class__)
+            and self.universal_shid == other.universal_shid):
+            return True
+        return False
+
+
+def package_id(**kwargs):
+    if kwargs.get('package'):
+        group, name, version = kwargs['package'].split(':', 3)
+        return PackageID(
+            group =  group,
+            name = name,
+            version = version
+        )
+    else:
+        return PackageID(
+            group =  kwargs.get('group'),
+            name = kwargs.get('name'),
+            version = kwargs.get('version')
+        )
+
 class MavenPackage(object):
     """docstring for MavenPackage"""
     packages = []
 
-    def find_matching_package(self, group, name=''):
-        if name != '':
-            pkg = group + ':' + name
-        else:
-            pkg = group
-        for package in MavenPackage.packages:
-            if package.data.get('id') == pkg:
-                return package
-        return None
-
-
     def __init__(self, **kwargs):
-        self.data = {}
-
-        if not kwargs.get('name') and not kwargs.get('version'):
-            group, name, version = kwargs.get('pkg').split(':', 3)
-
-        self.data['name'] = kwargs.get('name') or name
-        self.data['version'] = kwargs.get('version') or version
-        self.data['group'] = kwargs.get('group') or group
-        self.data['dependencies] = []
-        self.data['repository'] = None
-        self.data['type'] = kwargs.get('type', 'primary')
-        self.data['id'] = self.data['group'] + ':' + self.data['name']
-        self.data['normalized_id'] =  normalize_id(self.data['id'])
-        self.data['package'] = self.data['group'] + ':' + self.data['name'] + ':' + self.data['version']
-        # walk tree and look for package with same name
-        package = self.find_matching_package(self.data.get('id'))
-        if package:
-            if package.version != version:
-                print 'Duplicate package {0} with different version {1} and {2},'.format(name, version, package.version)
-                print '\tdropping {0}#{1}'.format(name, package.version)
-                return
-            return
-
-        if kwargs.get('repository'):
-            self.data['repository'] = kwargs.get('repository')
-        else:
-            self.find_repository()
-
+        self.dependencies = []
+        self.identifier = package_id(**kwargs)
+        self.group = self.identifier.group
+        self.name = self.identifier.name
+        self.version = self.identifier.version
+        self.repository = kwargs['repository'] or 'http://repo1.maven.org/maven2/'
+        self.level = kwargs.get('level', 0)
+        self.type = kwargs.get('type', 'primary')
         self.build_dependencies()
-
-        MavenPackage.packages.append(self)
-
-    def find_repository(self):
-        for ar in ['aar', 'jar']:
-            cksum, repo = mavensha1(self.data['group'], self.data['name'], self.data['version'], ar)
-            if cksum != None:
-                self.data['repository'] = repo
-                self.data['checksum'] = cksum
-                self.data['file_type'] = ar
-
-                return
-
+        package_manager.register_package(self)
+    def get_url(self, ar):
+        return ((self.repository or 'local:')
+                    + '{0}/{1}/{2}/{1}-{2}.{3}'.format(
+                        self.group.replace('.', '/'),
+                        self.name,
+                        self.version, ar))
+    def get_data_holder(self):
+        return {}
     def build_dependencies(self):
-        if self.data['repository'] == 'local:':
+        if self.repository == 'local:':
             return
 
         pom_url = self.get_url('pom')
@@ -70,7 +131,7 @@ class MavenPackage(object):
 
         # If not found, then local dep
         if pom == '':
-            self.data['repository'] = 'local:'
+            self.repository = 'local:'
             return
 
         project = objectify.fromstring(pom)
@@ -78,34 +139,40 @@ class MavenPackage(object):
         try:
             for dep in project.dependencies.dependency:
                 if dep.scope == 'compile':
-                    self.data.get('dependencies').append(dep.groupId + ':' + dep.artifactId)
+                    self.dependencies.append(dep.groupId + ':' + dep.artifactId)
                     depPkg = dep.groupId + ':' + dep.artifactId + ':' + str(dep.version)
-                    pkg = MavenPackage(pkg=depPkg, type='secondary', repository=self.repository)
+                    pkg = MavenPackage(package=depPkg,
+                                        level=self.level + 1,
+                                        repository=self.repository,
+                                        type='secondary')
+
         except AttributeError:
             pass
 
-    def display_tree(self, indent=''):
+    def display_tree(self, indent='', suffix=''):
 
-        print indent + self.data['id']
-        for dep in self.data['dependencies']:
-            self.find_matching_package(dep).display_tree(indent + '  ')
+        print indent + self.identifier.id +' ('+self.identifier.universal_shid + ') @ '+str(self.level) + suffix
+        for dep in self.dependencies:
+            package_manager.find_matching_package(identifier = dep).display_tree(indent + '  ', suffix)
 
-    def get_flat_dependencies(self):
+    def get_flat_dependencies(self, mode=0):
         dep_list = []
-        self.get_flat_dependencies2(dep_list)
+        self.get_flat_dependencies2(dep_list, mode)
         return list(set(dep_list))
 
-    def get_flat_dependencies2(self, dep_list):
-        dep_list.append(self.data['normalized_id'])
-        for dep in self.data['dependencies']:
-            self.find_matching_package(dep).get_flat_dependencies2(dep_list)
+    def get_flat_dependencies2(self, dep_list, mode=0):
+        if mode == 0:
+            dep_list.append(self.identifier.normalized_id)
+        else:
+            dep_list.append(self.identifier.id)
+        for dep in self.dependencies:
+            package_manager.find_matching_package(identifier = dep).get_flat_dependencies2(dep_list, mode)
         return
 
 
-
     def get_url(self, ar):
-        return ((self.data['repository'] or 'local:')
+        return ((self.repository or 'local:')
                     + '{0}/{1}/{2}/{1}-{2}.{3}'.format(
-                        self.data['group'].replace('.', '/'),
-                        self.data['name'],
-                        self.data['version'], ar))
+                        self.group.replace('.', '/'),
+                        self.name,
+                        self.version, ar))
