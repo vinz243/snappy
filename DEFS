@@ -2,22 +2,19 @@ import sys
 import os
 sys.path.insert(0, os.getcwd() + '/')
 
+from shutil import copyfile
 from mvn_utils import read_remote_file
 from mvn_utils import sha1
 from maven_package import MavenPackage, PackageID, package_manager
 
 def maven_package(**kwargs):
-    package = MavenPackage(
-        package = kwargs.get('package'),
-        repository = kwargs.get('repository'),
-        type = kwargs.get('type')
-    )
-    nid = package.identifier.normalized_id
+    nid = kwargs.get('normalized_id')
+    extension = kwargs.get('extension')
     remote_file(
-        name =  nid + '-remote',
-        out = '{0}__{1}.{2}'.format(nid, package.identifier.shid, package.extension),
-        sha1 = package.mavensha1(),
-        url = package.get_url(package.extension)
+        name = nid + '.' + extension ,
+        out = '{0}.{1}'.format(nid, extension),
+        sha1 = kwargs.get('sha1'),
+        url = kwargs.get(url)
     )
     if package.extension == 'aar':
         prebuilt_jar(

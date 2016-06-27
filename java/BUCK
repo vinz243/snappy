@@ -1,20 +1,19 @@
-add_build_file_dep('//libs')
+
 project_config(
   src_target = '//java:main',
   src_roots = [ '.' ]
 )
 deps = [
-  '//libs:appcompat-v7',
-  '//libs:support-v4',
-  '//libs:support-v13',
-  '//libs:design',
+  '//maven:com_android_support__appcompat-v7',
+  '//maven:com_android_support__design',
+  '//maven:com_android_support__recyclerview-v7',
+  '//maven:com_android_support__support-v13',
+  '//maven:com_android_support__support-v4',
+  '//maven:com_facebook_fresco__drawee',
   '//res:res',
-  '//libs:recyclerview-v7',
-  '//libs:greedo-layout',
+  '//maven:com_fivehundredpx__greedo-layout',
   '//maven:com_facebook_fresco__fresco'
 ]
-pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(deps)
 android_library(
   name = 'main',
   srcs = glob(['./**/*.java']),

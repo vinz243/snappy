@@ -1,15 +1,16 @@
-add_build_file_dep('//libs')
+
 android_resource(
   name = 'res',
   res = 'snappy',
   package = 'com.whitedrop.snappy',
   deps = [
-    '//libs:appcompat-v7',
-    '//libs:design',
-    '//libs:support-v4',
-    '//libs:support-vector-drawable',
-    '//libs:animated-vector-drawable',
-    '//libs:recyclerview-v7',
+    '//maven:com_android_support__animated-vector-drawable',
+    '//maven:com_android_support__appcompat-v7',
+    '//maven:com_android_support__design',
+    '//maven:com_android_support__recyclerview-v7',
+    '//maven:com_android_support__support-v13',
+    '//maven:com_android_support__support-v4',
+    '//maven:com_android_support__support-vector-drawable',
     '//maven:com_facebook_fresco__drawee',
   ],
   visibility = [

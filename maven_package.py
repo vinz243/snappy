@@ -176,14 +176,15 @@ class MavenPackage(object):
             if not jar:
                 aar = self.mavensha1('aar.sha1')
                 if not aar:
-                    print 'WHAAT ' + self.identifier.id
                     return
                 else:
                     self.extension = 'aar'
                     return aar
             else:
-                self.extension = jar
-                return 'jar'
+                self.extension = 'jar'
+                return jar
+        if ext == None and hasattr(self, 'extension'):
+            return self.mavensha1(self.extension + '.sha1')
         try:
             link = self.get_url(ext)
             cksum = read_remote_file(link)
