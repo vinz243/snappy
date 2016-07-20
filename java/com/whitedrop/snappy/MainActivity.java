@@ -214,6 +214,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         public PictureViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             SimpleDraweeView draweeView = new SimpleDraweeView(mContext);
             draweeView.setScaleType(SimpleDraweeView.ScaleType.CENTER_CROP);
+            draweeView.setBackgroundResource(R.color.colorPrimary);
 
             draweeView.setLayoutParams(new ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -225,7 +226,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         @Override
         public void onBindViewHolder(PictureViewHolder holder, int position) {
-            holder.mImageView.setImageURI(Uri.parse(String.valueOf(mPictures.get(position))));
+            Log.d(TAG, "onbind " + String.valueOf(mPictures.get(position)));
+            holder.mImageView.setImageURI(Uri.parse("file://" + String.valueOf(mPictures.get(position))));
         }
 
         @Override

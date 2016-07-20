@@ -1,6 +1,7 @@
 package com.whitedrop.snappy;
 
 import android.app.Application;
+import android.util.Log;
 
 import com.facebook.drawee.backends.pipeline.Fresco;
 
