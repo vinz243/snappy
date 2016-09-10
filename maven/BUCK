@@ -6,6 +6,81 @@
 # > python mvn package add groupId:artifactId:versionId
 
 
+### Package com.fivehundredpx:greedo-layout
+remote_file(
+    name =  'com_fivehundredpx__greedo-layout-remote',
+    out = 'com_fivehundredpx__greedo-layout-remote.aar',
+    sha1 = 'adb7fe9ec863aae454e488572e54b184e8364882',
+    url = 'https://github.com/500px/greedo-layout-for-android/raw/master/releases/com/fivehundredpx/greedo-layout/1.0.0/greedo-layout-1.0.0.aar'
+)
+
+android_prebuilt_aar(
+    name = 'com_fivehundredpx__greedo-layout',
+    aar = ':com_fivehundredpx__greedo-layout-remote',
+    deps = [
+        '//maven:com_android_support__appcompat-v7',
+        '//maven:com_android_support__recyclerview-v7',
+    ],
+    visibility = ['PUBLIC']
+)
+
+
+### Package com.android.support:design
+android_prebuilt_aar(
+  name = 'com_android_support__design',
+  aar = 'design-23.4.0.aar',
+  visibility = ['PUBLIC']
+)
+
+
+### Package com.android.support:appcompat-v7
+android_prebuilt_aar(
+  name = 'com_android_support__appcompat-v7',
+  aar = 'appcompat-v7-23.4.0.aar',
+  visibility = ['PUBLIC']
+)
+
+
+### Package com.android.support:support-v4
+android_prebuilt_aar(
+  name = 'com_android_support__support-v4',
+  aar = 'support-v4-23.4.0.aar',
+  visibility = ['PUBLIC']
+)
+
+
+### Package com.android.support:support-v13
+android_prebuilt_aar(
+  name = 'com_android_support__support-v13',
+  aar = 'support-v13-23.4.0.aar',
+  visibility = ['PUBLIC']
+)
+
+
+### Package com.android.support:support-vector-drawable
+android_prebuilt_aar(
+  name = 'com_android_support__support-vector-drawable',
+  aar = 'support-vector-drawable-23.4.0.aar',
+  visibility = ['PUBLIC']
+)
+
+
+### Package com.android.support:animated-vector-drawable
+android_prebuilt_aar(
+  name = 'com_android_support__animated-vector-drawable',
+  aar = 'animated-vector-drawable-23.4.0.aar',
+  visibility = ['PUBLIC']
+)
+
+
+### Package com.android.support:recyclerview-v7
+android_prebuilt_aar(
+  name = 'com_android_support__recyclerview-v7',
+  aar = 'recyclerview-v7-23.4.0.aar',
+  visibility = ['PUBLIC']
+)
+
+
 ### Package com.nineoldandroids:library
 remote_file(
     name =  'com_nineoldandroids__library-remote',
@@ -140,79 +215,4 @@ android_prebuilt_aar(
         '//maven:com_facebook_fresco__fbcore',
     ],
     visibility = ['PUBLIC']
-)
-
-
-### Package com.fivehundredpx:greedo-layout
-remote_file(
-    name =  'com_fivehundredpx__greedo-layout-remote',
-    out = 'com_fivehundredpx__greedo-layout-remote.aar',
-    sha1 = 'adb7fe9ec863aae454e488572e54b184e8364882',
-    url = 'https://github.com/500px/greedo-layout-for-android/raw/master/releases/com/fivehundredpx/greedo-layout/1.0.0/greedo-layout-1.0.0.aar'
-)
-
-android_prebuilt_aar(
-    name = 'com_fivehundredpx__greedo-layout',
-    aar = ':com_fivehundredpx__greedo-layout-remote',
-    deps = [
-        '//maven:com_android_support__appcompat-v7',
-        '//maven:com_android_support__recyclerview-v7',
-    ],
-    visibility = ['PUBLIC']
-)
-
-
-### Package com.android.support:design
-android_prebuilt_aar(
-  name = 'com_android_support__design',
-  aar = 'design-23.4.0.aar',
-  visibility = ['PUBLIC']
-)
-
-
-### Package com.android.support:appcompat-v7
-android_prebuilt_aar(
-  name = 'com_android_support__appcompat-v7',
-  aar = 'appcompat-v7-23.4.0.aar',
-  visibility = ['PUBLIC']
-)
-
-
-### Package com.android.support:support-v4
-android_prebuilt_aar(
-  name = 'com_android_support__support-v4',
-  aar = 'support-v4-23.4.0.aar',
-  visibility = ['PUBLIC']
-)
-
-
-### Package com.android.support:support-v13
-android_prebuilt_aar(
-  name = 'com_android_support__support-v13',
-  aar = 'support-v13-23.4.0.aar',
-  visibility = ['PUBLIC']
-)
-
-
-### Package com.android.support:support-vector-drawable
-android_prebuilt_aar(
-  name = 'com_android_support__support-vector-drawable',
-  aar = 'support-vector-drawable-23.4.0.aar',
-  visibility = ['PUBLIC']
-)
-
-
-### Package com.android.support:animated-vector-drawable
-android_prebuilt_aar(
-  name = 'com_android_support__animated-vector-drawable',
-  aar = 'animated-vector-drawable-23.4.0.aar',
-  visibility = ['PUBLIC']
-)
-
-
-### Package com.android.support:recyclerview-v7
-android_prebuilt_aar(
-  name = 'com_android_support__recyclerview-v7',
-  aar = 'recyclerview-v7-23.4.0.aar',
-  visibility = ['PUBLIC']
 )

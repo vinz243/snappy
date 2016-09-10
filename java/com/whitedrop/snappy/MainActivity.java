@@ -237,9 +237,17 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         @Override
         public double aspectRatioForIndex(int i) {
+            if (this.getItemCount() <= i) {
+              Log.e(TAG, "We've got past the end of list? wtf");
+              Log.d(TAG, "Just to remind, we have " + this.getItemCount() + " items");
+              return 1;
+            }
+
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
+
             Log.d(TAG, mPictures.get(i).getPath());
+
             BitmapFactory.decodeFile(mPictures.get(i).getPath(), options);
             return options.outWidth / (double) options.outHeight;
         }

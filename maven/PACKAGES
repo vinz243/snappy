@@ -1,6 +1,4 @@
 
-compile com.facebook.fresco:fresco:0.11.0 from http://repo1.maven.org/maven2/
-
 compile com.fivehundredpx:greedo-layout:1.0.0 from https://github.com/500px/greedo-layout-for-android/raw/master/releases/
 
 compile com.android.support:design:23.4.0 from local:
@@ -15,3 +13,6 @@ compile com.android.support:support-v13:23.4.0 from local:
 compile com.android.support:support-vector-drawable:23.4.0 from local:
 compile com.android.support:animated-vector-drawable:23.4.0 from local:
 compile com.android.support:recyclerview-v7:23.4.0 from local:
+
+compile com.facebook.fresco:fresco:0.11.0 from http://repo1.maven.org/maven2/
+

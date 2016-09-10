@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images.ImageColumns;
 import java.util.ArrayList;
+import android.util.Log;
 
 public class PictureProvider  {
 
@@ -32,6 +33,8 @@ public class PictureProvider  {
         picturesListCache.clear();
         picturesListCache.addAll(getAllPictures(this.activity));
         listCached = true;
+
+        Log.d("PictureProvider", "We have " + picturesListCache.size() + " pics");
         return (ArrayList<Picture>) picturesListCache.clone();
     }
 
